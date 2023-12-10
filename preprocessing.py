@@ -236,12 +236,21 @@ def interpolate_trajectory(df):
 
         ori_copy = pol.copy()
         interpolated = pol[:indices[0][0]]
-        for gap in indices:
+        for ii, gap in enumerate(indices):
             start, end = gap
             interpolated = np.concatenate((interpolated,
                                            foo(ori_copy, start, end)
                                           )
                                          )
+            if ii != len(indices) - 1:
+                n_st, _ = indices[ii + 1]
+                interpolated = np.concatenate((interpolated,
+                                               ori_copy[end + 1 : n_st])
+                                              )
+            else:
+                interpolated = np.concatenate((interpolated,
+                                               ori_copy[end + 1 :])
+                                              )
         return interpolated
 
     def foo(original_trajectory, start, end, update_time = 15):
@@ -260,12 +269,19 @@ def interpolate_trajectory(df):
                             original_trajectory[end + 1]) / update_time)
         avg_speed = np.nanmean([ps, ns])
         dist = haversine(original_trajectory[start], original_trajectory[end])
-        npoints = round(((dist / avg_speed) / (3600)) / update_time)
+        npoints = int(np.ceil(((dist / avg_speed) / (3600)) / update_time))
+        print(f'npoints = {npoints}')
+        npoints += 2
+        print(f'npoints = {npoints}')
 
-        x_intp = np.interp(np.linspace(0, npoints), [0, npoints],
-                           original_trajectory[[start, end]][:, 0])
-        y_intp = np.interp(np.linspace(0, npoints), [0, npoints],
-                           original_trajectory[[start, end]][:, 1])
+        x = np.linspace(start, end, npoints)
+        xp = list(range(start, end + 1))
+        print(f'x: {len(x)}')
+        print(x)
+        fxp = original_trajectory[start:end+1]
+        print(f'fxp: {fxp.shape}')
+        x_intp = np.interp(x, xp, fxp[:, 0])
+        y_intp = np.interp(x, xp, fxp[:, 1])
         x_intp = x_intp.reshape((len(x_intp), 1))
         y_intp = y_intp.reshape((len(y_intp), 1))
         return np.concatenate((x_intp, y_intp), axis = 1)
