@@ -61,12 +61,13 @@ def evaluate_predictions(pred_clusters, true_clusters, cluster_centroids):
 
 
 if __name__ == '__main__':
-    df = pd.read_csv('../train.csv')
+    df = pd.read_csv('../train_clean.csv')
     train_losses = []
 
     kmeans = KMeans(n_clusters=3392, random_state=42)
-    destination_coordinates = ast.literal_eval(df['destination_coordinates'])  # cast to numerical
-    df['destination_cluster'] = kmeans.fit_predict(destination_coordinates)
+    destination_coordinates = [ast.literal_eval(end) for
+                               end in df.END] # cast to numerical
+    df['CLUSTER'] = kmeans.fit_predict(destination_coordinates)
     cluster_centers = torch.tensor(kmeans.cluster_centers_, dtype=torch.float)
 
     k = 4  # only take into account first and last 4 points of the trajectory
@@ -78,7 +79,7 @@ if __name__ == '__main__':
 
     scaled_features = scale_gps_features(df, k)
     inputs = torch.tensor(scaled_features, dtype=torch.float)
-    targets = torch.tensor(df['destination_cluster'].values, dtype=torch.long)
+    targets = torch.tensor(df['CLUSTER'].values, dtype=torch.long)
 
     dataset = TensorDataset(inputs, targets)
     data_loader = DataLoader(dataset, batch_size=64, shuffle=True)
