@@ -23,9 +23,9 @@ def normalize(df):
                    for ii in range(df.shape[0])]
 
 
-data = pd.read_csv(sys.argv[1])
+data = pd.read_csv('train.csv')
 
-data.POLYLINE = [np.array(literal_eval(pol)) for pol in data.POLYLINE]
+data['POLYLINE'].apply(lambda x: literal_eval(x) if isinstance(x, str) else x)
 data['N_POINTS'] = [len(pol) for pol in data.POLYLINE]
 data = data[data.N_POINTS >= 3]
 data.reset_index(drop = True, inplace = True)
@@ -37,12 +37,13 @@ normalize(data)
 
 data = data.drop('DISTANCE', axis = 1)
 
-data.CALL_TYPE.replace({'A': 1, 'B': 2, 'C': 3})
-data.DAY_TYPE.replace({'A': 1, 'B': 2, 'C': 3})
+data['CALL_TYPE'].replace({'A': 1, 'B': 2, 'C': 3}, inplace = True)
+data['DAY_TYPE'].replace({'A': 1, 'B': 2, 'C': 3},inplace = True)
 
 data.POLYLINE = [pol.tolist() for pol in data.POLYLINE]
+
 data.START = [pol.reshape((2,)).tolist() for pol in data.START]
 data.END = [pol.reshape((2,)).tolist() for pol in data.END]
 
-data.to_csv(f'{sys.argv[1].split(".")[0]+"_clean.csv"}')
+data.to_csv("train_clean.csv")
 
