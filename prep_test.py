@@ -5,7 +5,7 @@ from metrics import haversine
 k = 5
 
 # Load DataFrame
-df = pd.read_csv('train_clean.csv')
+df = pd.read_csv('test.csv')
 
 
 def process_polyline(polyline):
@@ -16,7 +16,7 @@ def process_polyline(polyline):
     flattened_coords = [item for sublist in coords for item in sublist]  # Aplanar la lista
     return flattened_coords
 
-
+'''
 def normalize(df):
     df['DISTANCE'] = [haversine(df.loc[ii, 'START'], df.loc[ii, 'END'])
                       for ii in range(df.shape[0])]
@@ -25,7 +25,7 @@ def normalize(df):
     max_d = max(df.DISTANCE)
     df.POLYLINE = [df.loc[ii, 'POLYLINE'] / max_d
                    for ii in range(df.shape[0])]
-
+'''
 
 # Aplica la función a cada fila en la columna POLYLINE
 df['Processed_POLYLINE'] = df['POLYLINE'].apply(process_polyline)
@@ -36,19 +36,22 @@ num_columns = 4 * k  # 2 coordenadas por punto, 2k puntos en total
 polyline_columns = [f'coord_{i}' for i in range(num_columns)]
 df[polyline_columns] = pd.DataFrame(df['Processed_POLYLINE'].tolist(), columns=polyline_columns, index=df.index)
 
+df['END_Long'] = [eval(polyline)[-1][0] for polyline in df['POLYLINE']]
+df['END_Lat'] = [eval(polyline)[-1][1] for polyline in df['POLYLINE']]
+
+'''
 # Procesa las demás columnas
 df['ORIGIN_CALL'].fillna(0, inplace=True)
 df['ORIGIN_STAND'].fillna(0, inplace=True)
 df['CALL_TYPE'] = df['CALL_TYPE'].replace(['A', 'B', 'C'], [0, 1, 2],inplace=True)
 df['DAY_TYPE'] = df['DAY_TYPE'].replace(['A', 'B', 'C'], [0, 1, 2],inplace=True)
 df['TAXI_ID'] -= 20000000
-df['END_Long'] = [eval(polyline)[-1][0] for polyline in df['POLYLINE']]
-df['END_Lat'] = [eval(polyline)[-1][1] for polyline in df['POLYLINE']]
+
 df["TIMESTAMP"] = pd.to_datetime(df["TIMESTAMP"], unit="s").dt.hour
 # Elimina las columnas que ya no necesitas
 df.drop(['POLYLINE', 'Processed_POLYLINE', 'TRIP_ID','coord_0','coord_1','CLUSTER','END','START','N_POINTS','Unnamed: 0','MISSING_DATA'], axis=1, inplace=True)
-
+'''
+df.drop(['POLYLINE', 'Processed_POLYLINE', 'TRIP_ID','CALL_TYPE','ORIGIN_CALL','ORIGIN_STAND','TAXI_ID','TIMESTAMP','DAY_TYPE','MISSING_DATA'], axis=1, inplace=True)
 
 # Guarda el DataFrame procesado
 df.to_csv('processed_test.csv', index=False)
-
