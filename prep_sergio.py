@@ -1,10 +1,10 @@
 import pandas as pd
 import ast
 
-# Define el valor de k
+# Define value of k
 k = 5
 
-# Carga el DataFrame
+# Load DataFrame
 df = pd.read_csv('train_clean.csv')
 
 def process_polyline(polyline):
@@ -15,8 +15,19 @@ def process_polyline(polyline):
     flattened_coords = [item for sublist in coords for item in sublist]  # Aplanar la lista
     return flattened_coords
 
+
+def normalize(df):
+    df['DISTANCE'] = [haversine(df.loc[ii, 'START'], df.loc[ii, 'END'])
+                      for ii in range(df.shape[0])]
+    df.POLYLINE = [df.loc[ii, 'POLYLINE'] - df.loc[ii, 'START']
+                   for ii in range(df.shape[0])]
+    max_d = max(df.DISTANCE)
+    df.POLYLINE = [df.loc[ii, 'POLYLINE'] / max_d
+                   for ii in range(df.shape[0])]
+
 # Aplica la función a cada fila en la columna POLYLINE
 df['Processed_POLYLINE'] = df['POLYLINE'].apply(process_polyline)
+normalize(data)
 
 # Convierte la lista de coordenadas en columnas individuales
 num_columns = 4 * k  # 2 coordenadas por punto, 2k puntos en total
