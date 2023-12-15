@@ -26,9 +26,9 @@ df[polyline_columns] = pd.DataFrame(df['Processed_POLYLINE'].tolist(), columns=p
 # Procesa las demás columnas
 df['ORIGIN_CALL'].fillna(0, inplace=True)
 df['ORIGIN_STAND'].fillna(0, inplace=True)
-df['CALL_TYPE'] = df['CALL_TYPE'].replace(['A', 'B', 'C'], [0, 1, 2])
-df['DAY_TYPE'] = df['DAY_TYPE'].replace(['A', 'B', 'C'], [0, 1, 2])
-df['MISSING_DATA'] = df['MISSING_DATA'].replace(['True', 'False'], [1, 0])
+df['CALL_TYPE'] = df['CALL_TYPE'].replace(['A', 'B', 'C'], [0, 1, 2],inplace=True)
+df['DAY_TYPE'] = df['DAY_TYPE'].replace(['A', 'B', 'C'], [0, 1, 2],inplace=True)
+df['MISSING_DATA'] = df['MISSING_DATA'].replace(['True', 'False'], [1, 0],inplace=True)
 
 # Elimina las columnas que ya no necesitas
 df.drop(['POLYLINE', 'Processed_POLYLINE', 'TRIP_ID','coord_0','coord_1','CLUSTER','START','END','N_POINTS','Unnamed: 0'], axis=1, inplace=True)

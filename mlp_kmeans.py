@@ -3,13 +3,14 @@ import torch.nn as nn
 import pandas as pd
 from torch.utils.data import DataLoader, TensorDataset
 from metrics import haversine
+from example_script import write_submission
 import matplotlib.pyplot as plt
 
 
 # Define el número de coordenadas y características adicionales
 k = 5
-num_coord_features = 4 * k  # 2 * 2 * k coordenadas
-num_additional_features = 8  # Reemplaza con el número de características adicionales
+num_coord_features = 4 * k - 4  # 2 * 2 * k coordenadas
+num_additional_features = 6  # Reemplaza con el número de características adicionales
 
 # Define tu red neuronal
 class TaxiMLP(nn.Module):
@@ -55,12 +56,15 @@ for epoch in range(5):  # Ajusta num_epochs según sea necesario
     for inputs, targets in data_loader:
         # Forward pass
         outputs = model(inputs)
+        if(epoch_loss==0):print(inputs)
+        if(epoch_loss==0):print(outputs)
+        if(epoch_loss==0):print(targets)
         loss = equirectangular_distance(outputs, targets)
         # Backward y optimización
         optimizer.zero_grad()
-        loss.backward()
+        loss.mean().backward()
         optimizer.step()
-        epoch_loss += loss.item()
+        epoch_loss += loss.mean().item()
     train_losses.append(epoch_loss/len(data_loader))
     print(f'Epoch [{epoch+1}/{5}], Loss: {epoch_loss:.4f}')
 
