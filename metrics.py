@@ -1,5 +1,6 @@
 import numpy as np
 
+
 def haversine(pred, gt):
     """
     Havarsine distance between two points on the Earth surface.

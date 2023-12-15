@@ -75,11 +75,11 @@ def dummy_preprocessing(data):
 # This example script will produce the file "example_submission.csv".
 if __name__ == "__main__":
     # Train set
-    train_data, n_trip_train = load_data("../train.csv")
+    train_data, n_trip_train = load_data("train_clean.csv")
     print(f"Train data shape: {train_data.shape}")
 
     # Train set
-    test_data, n_trip_test = load_data("../test.csv")
+    test_data, n_trip_test = load_data(" test.csv")
     print(f"Test data shape: {test_data.shape}")
     test_trips_ids = list(test_data.index)
 
