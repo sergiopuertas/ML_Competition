@@ -28,59 +28,59 @@ X_train = scaler.fit_transform(X_train)
 X_test = scaler.transform(X_test)
 
 # Diccionario de modelos e hiperparámetros
-models = {
+models_hyperparams = {
     'KNN': {
-        'model': KNeighborsRegressor(),
-        'params': {
-            'n_neighbors': [3, 5, 7, 9],
-            'weights': ['uniform', 'distance']
-        }
+        'model': KNeighborsRegressor,
+        'params_list': [{'n_neighbors': k, 'weights': w} for k in [5, 10, 12, 15] for w in ['uniform', 'distance']]
     },
     'DecisionTree': {
-        'model': DecisionTreeRegressor(),
-        'params': {
-            'max_depth': [5, 10, 15, 20]
-        }
+        'model': DecisionTreeRegressor,
+        'params_list': [{'max_depth': d} for d in [5, 10, 20, 30]]
     },
     'RandomForest': {
-        'model': RandomForestRegressor(),
-        'params': {
-            'n_estimators': [10, 50, 100],
-            'max_depth': [5, 10, 15]
-        }
+        'model': RandomForestRegressor,
+        'params_list': [{'n_estimators': n, 'max_depth': d} for n in [10, 50, 100] for d in [10, 15, 20]]
     },
-    'SVR': { # support vector machines
-        'model': SVR(),
-        'params': {
-            'C': [0.1, 1, 10],
-            'kernel': ['rbf', 'linear']
-        }
+    'SVR': {
+        'model': SVR,
+        'params_list': [{'C': c, 'kernel': k} for c in [0.1, 1, 10] for k in ['rbf', 'linear']]
     }
 }
 
 # Entrenamiento y evaluación de cada modelo
 scores = []
-for model_name, mp in models.items():
-    print(model_name, mp)
-    clf = GridSearchCV(mp['model'], mp['params'], cv=5, return_train_score=False)
-    clf.fit(X_train, y_train)
-    y_pred = clf.predict(X_test)
-    loss = haversine(y_train,y_test)
-    scores.append({
-        'model': model_name,
-        'best_score': clf.best_score_,
-        'best_params': clf.best_params_,
-        'loss': loss
-    })
+for model_name, model_info in models_hyperparams.items():
+    for params in model_info['params_list']:
+        # Create a model with the given hyperparameters
+
+        model = model_info['model'](**params)
+        print(model)
+        model.fit(X_train, y_train)
+        y_pred = model.predict(X_test)
+        y_pred = np.stack((y_pred[:, 1], y_pred[:, 0]), axis=-1)
+        loss = haversine(y_pred,y_test)
+
+        scores.append({
+            'model': model_name,
+            'params': params,
+            'loss': loss
+        })
 
 # Convertir los resultados en un DataFrame
-results_df = pd.DataFrame(scores, columns=['model', 'best_score', 'best_params', 'loss'])
+results_df = pd.DataFrame(scores, columns=['model', 'params', 'loss'])
 print(results_df)
 results_df.to_csv('results.csv', index=False)
 
 # Graficar los resultados
 fig, ax = plt.subplots()
-results_df.sort_values(by='loss', ascending=False).plot(x='model', y='loss', kind='barh', ax=ax)
-ax.set_xlabel('Loss')
-ax.set_title('Model Performance Comparison')
+sorted_results = results_df.sort_values(by='loss', ascending=True)
+
+for i, row in sorted_results.iterrows():
+    ax.scatter(i, row['mse'], label=f"{row['model']} {row['params']}")
+
+ax.set_xlabel('Index')
+ax.set_ylabel('Mean Squared Error')
+ax.set_title('Hyperparameter Tuning Results')
+plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
+plt.tight_layout()
 plt.show()
