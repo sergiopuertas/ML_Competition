@@ -7,6 +7,7 @@ from metrics import haversine
 import sys
 import logging
 
+
 ### Change format of polyline
 def polyline_manipulation(df):
     """
@@ -25,8 +26,8 @@ def polyline_manipulation(df):
         try:
             pol = df.iloc[ii].POLYLINE
             if len(pol) != 0:
-                #print(df.loc[ii, 'START'])
-                #print(pol[0])
+                # print(df.loc[ii, 'START'])
+                # print(pol[0])
                 df.loc[ii, 'N_POINTS'] = len(pol)
                 df.loc[ii, 'START'][:] = np.array(pol[0])
                 df.loc[ii, 'END'][:] = np.array(pol[-1])
@@ -54,7 +55,7 @@ def polyline_manipulation(df):
             raise e
     logging.info('Size before removing null trips: %d' % df.shape[0])
     df = df[df.N_POINTS > 0]
-    df.reset_index(drop = True, inplace = True)
+    df.reset_index(drop=True, inplace=True)
     logging.info('Size after removing null trips: %d\n' % df.shape[0])
     return df
 
@@ -75,7 +76,7 @@ def haversine(p1, p2):
     dlat = lat1 - lat2
     dlon = lon1 - lon2
 
-    a = np.sin(dlat/2)**2 + np.cos(lat1) * np.cos(lat2) * np.sin(dlon/2)**2
+    a = np.sin(dlat / 2) ** 2 + np.cos(lat1) * np.cos(lat2) * np.sin(dlon / 2) ** 2
 
     d = 2 * 6371 * np.arctan2(np.sqrt(a), np.sqrt(1 - a))
     return d
@@ -87,7 +88,7 @@ def tau(df):
         try:
             # Calculate distance between each consecute step of the POLYLINE
             logging.debug('TAU: Calculation for %s' % df.loc[ii, 'TRIP_ID'])
-            step_distance = [haversine(df.loc[ii, 'POLYLINE'][jj-1],
+            step_distance = [haversine(df.loc[ii, 'POLYLINE'][jj - 1],
                                        df.loc[ii, 'POLYLINE'][jj])
                              for jj in range(1, len(df.loc[ii, 'POLYLINE']))]
             overall_distance = haversine(df.loc[ii, 'START'],
@@ -109,6 +110,7 @@ def time_manipulation(df):
     in terms of analysis, and is not readable. This function adds a new column
     with the time in human-readable format.
     """
+
     def _time(df):
         for ii in range(df.shape[0]):
             try:
@@ -140,19 +142,19 @@ def remove_outliers(df, c_name):
     q25 = df[c_name].quantile(0.25)
     q75 = df[c_name].quantile(0.75)
     iqr = q75 - q25
-    lower_bound = q25 - 1.5*iqr
-    upper_bound = q75 + 1.5*iqr
+    lower_bound = q25 - 1.5 * iqr
+    upper_bound = q75 + 1.5 * iqr
     logging.debug('OUTLIERS: Lower bound for outliers: %f' % lower_bound)
     logging.debug('OUTLIERS: Upper bound for outliers: %f' % upper_bound)
-    
+
     df = df[df[c_name] > lower_bound]
     df = df[df[c_name] < upper_bound]
-    df.reset_index(drop = True, inplace = True)
-    
+    df.reset_index(drop=True, inplace=True)
+
     e_size = df.shape[0]
     logging.info('Datapoints after outlier screening: %d' % e_size)
     logging.info('Removal of outliers from column %s: %f %% removed'
-                 % (c_name, ((1 - e_size/o_size) * 100)))
+                 % (c_name, ((1 - e_size / o_size) * 100)))
     return df
 
 
@@ -188,7 +190,7 @@ def identify_gps_gaps(timeseries, threshold, update_time):
                 break
 
         other = timeseries[ii + 1]
-        dist = haversine(coords, other) # in km
+        dist = haversine(coords, other)  # in km
         delta_t = update_time / 3600
         speed = dist / delta_t
         # If speed limit is not and has not been exceded, nothing happens
@@ -201,7 +203,7 @@ def identify_gps_gaps(timeseries, threshold, update_time):
         elif speed > threshold and not started:
             started = True
             pair[0] = ii
-        # Signal the end of speed limit exceeding, and add to list 
+        # Signal the end of speed limit exceeding, and add to list
         elif speed <= threshold and started:
             started = False
             pair[1] = ii
@@ -213,7 +215,7 @@ def identify_gps_gaps(timeseries, threshold, update_time):
         return flagged
 
 
-def gaps(df, update_time = 15):
+def gaps(df, update_time=15):
     """
     Checks for GPS gaps for all trajectories with a progressively lower speed
     threshold. Stops when all rows with MISSING_DATA == True are properly
@@ -242,10 +244,11 @@ def interpolate_trajectory(df):
     the normal POLYLINE. If there are, does linear interpolation between the
     gaps and returns the new "corrected" POLYLINE.
     """
+
     def _interpolate(pol, indices):
         # Catch cases where the whole trajectory requires interpolation
         if (len(indices) == 1 and indices[0][0] == 0 and
-            indices[0][1] == len(pol) - 1):
+                indices[0][1] == len(pol) - 1):
             logging.info('INTERPOLATION: Case with whole trajectory needs '
                          'to be interpolated. Returning \'None\' to drop '
                          'row.')
@@ -257,20 +260,20 @@ def interpolate_trajectory(df):
             start, end = gap
             interpolated = np.concatenate((interpolated,
                                            foo(ori_copy, start, end)
+                                           )
                                           )
-                                         )
             if ii != len(indices) - 1:
                 n_st, _ = indices[ii + 1]
                 interpolated = np.concatenate((interpolated,
-                                               ori_copy[end + 1 : n_st])
+                                               ori_copy[end + 1: n_st])
                                               )
             else:
                 interpolated = np.concatenate((interpolated,
-                                               ori_copy[end + 1 :])
+                                               ori_copy[end + 1:])
                                               )
         return interpolated
 
-    def foo(original_trajectory, start, end, update_time = 15):
+    def foo(original_trajectory, start, end, update_time=15):
         if start == 0:
             ps = np.nan
             ns = (haversine(original_trajectory[end],
@@ -292,23 +295,23 @@ def interpolate_trajectory(df):
             npoints = 1
             logging.info('INTERPOLATION: Trajectory had section with null '
                          'avg speed. Input one intermediate value.')
-        #print(f'npoints = {npoints}')
+        # print(f'npoints = {npoints}')
         npoints += 2
-        #print(f'npoints = {npoints}')
+        # print(f'npoints = {npoints}')
 
         x = np.linspace(start, end, npoints)
         xp = list(range(start, end + 1))
-        #print(f'x: {len(x)}')
-        #print(x)
-        fxp = original_trajectory[start:end+1]
-        #print(f'fxp: {fxp.shape}')
+        # print(f'x: {len(x)}')
+        # print(x)
+        fxp = original_trajectory[start:end + 1]
+        # print(f'fxp: {fxp.shape}')
         x_intp = np.interp(x, xp, fxp[:, 0])
         y_intp = np.interp(x, xp, fxp[:, 1])
         x_intp = x_intp.reshape((len(x_intp), 1))
         y_intp = y_intp.reshape((len(y_intp), 1))
-        return np.concatenate((x_intp, y_intp), axis = 1)
+        return np.concatenate((x_intp, y_intp), axis=1)
 
-    df['POLYLINE_CLEAN'] = np.empty(df.shape[0], dtype = 'object')
+    df['POLYLINE_CLEAN'] = np.empty(df.shape[0], dtype='object')
     for ii in range(df.shape[0]):
         if df.loc[ii, 'GAPS'] == 0:
             df.loc[ii, 'POLYLINE_CLEAN'] = [df.loc[ii, 'POLYLINE']]
@@ -325,7 +328,7 @@ def interpolate_trajectory(df):
                 raise e
 
     logging.info('NONE CLEANUP: %d elements before cleanup' % df.shape[0])
-    df.dropna(subset = 'POLYLINE_CLEAN', inplace = True)
+    df.dropna(subset='POLYLINE_CLEAN', inplace=True)
     logging.info('NONE CLEANUP: %d elements after cleanup' % df.shape[0])
 
 
@@ -343,64 +346,64 @@ def process_cluster(cluster, idx):
         logging.info('CLUSTER: Started POLYLINE %d' % idx)
         cluster = polyline_manipulation(cluster)
     except Exception as e:
-        #data.to_pickle(outname)
+        # data.to_pickle(outname)
         logging.error('Failed at polyline manipulation in cluster %d: '
                       '\'%s\'' % (idx, e))
         raise e
         exit()
 
     try:
-        #logging.info('SUCCESS: Passed POLYLINE manipulation of cluster %d'
-                     #% idx)
+        # logging.info('SUCCESS: Passed POLYLINE manipulation of cluster %d'
+        # % idx)
         gaps(cluster, 15)
     except Exception as e:
-        #data.to_pickle(outname)
+        # data.to_pickle(outname)
         logging.error('Failed at gap identification in %d: \'%s\'\n'
                       'Check log for details.' % (idx, e))
         raise e
         exit()
 
     try:
-        #logging.info('SUCCESS: Passed GAPS indentification.')
+        # logging.info('SUCCESS: Passed GAPS indentification.')
         interpolate_trajectory(cluster)
     except Exception as e:
-        #data.to_pickle(outname)
+        # data.to_pickle(outname)
         logging.error('Failed at POLYLINE interpolation \'%s\'\n'
                       'Check log for details.' % e)
         raise e
         exit()
 
     # Update N_POINTS and T_TIME with POLYLINE_CLEAN
-    #logging.info('SUCCESS: Completed interpolation of POLYLINEs')
+    # logging.info('SUCCESS: Completed interpolation of POLYLINEs')
     cluster.N_POINTS = [len(pl[0]) for pl in cluster.POLYLINE_CLEAN]
     cluster = cluster[cluster.N_POINTS > 3]
     cluster = remove_outliers(cluster, 'N_POINTS')
     cluster.T_TIME = [npoints * 15 for npoints in cluster.N_POINTS]
 
     # Reset indexes
-    cluster.reset_index(drop = True, inplace = True)
+    cluster.reset_index(drop=True, inplace=True)
 
     # Calculate TAU values
     try:
-        #logging.info('SUCCESS: Completed outlier removal')
+        # logging.info('SUCCESS: Completed outlier removal')
         cluster = tau(cluster)
     except Exception as e:
-        #data.to_pickle(outname)
+        # data.to_pickle(outname)
         logging.error('Could not do TAU stuff in cluster %d' % idx)
         raise e
         exit()
 
     # Change TIME format
     try:
-        #logging.info('SUCCESS: Passed TAU calculation')
+        # logging.info('SUCCESS: Passed TAU calculation')
         cluster = time_manipulation(cluster)
     except Exception as e:
-        #data.to_pickle(outname)
+        # data.to_pickle(outname)
         logging.error('Could not change TIME format in cluster %d' % idx)
         raise e
         exit()
 
-    #logging.info('SUCCESS: Finished TIME formatting')
+    # logging.info('SUCCESS: Finished TIME formatting')
     cluster.CALL_TYPE.replace({'A': 1, 'B': 2, 'C': 3})
     cluster.DAY_TYPE.replace({'A': 1, 'B': 2, 'C': 3})
 
@@ -408,28 +411,27 @@ def process_cluster(cluster, idx):
                  % idx)
 
 
-
 if __name__ == '__main__':
     import pandas as pd
+
     database = sys.argv[1]
     print(database)
-    logging.basicConfig(filename = f'{database.split('.')[0]}.log',
-                        encoding = 'utf-8', filemode = 'w',
-                        level = logging.DEBUG
-                       )
+    logging.basicConfig(filename=f'{database.split('.')[0]}.log',
+                        encoding='utf-8', filemode='w',
+                        level=logging.DEBUG
+                        )
     outname = database.split('.')[0] + '_clean.csv'
     print(outname)
 
-    data = pd.read_csv(database, chunksize = 100)
+    data = pd.read_csv(database, chunksize=100)
     header = True
     for ii, chunk in enumerate(data):
         if ii == 0:
             process_cluster(chunk, ii)
-            chunk.to_csv(outname, header = header, mode = 'w')
+            chunk.to_csv(outname, header=header, mode='w')
             header = False
         else:
             process_cluster(chunk, ii)
-            chunck.to_csv(outname, mode = 'a')
+            chunck.to_csv(outname, mode='a')
 
     data.to_pickle(outname)
-
