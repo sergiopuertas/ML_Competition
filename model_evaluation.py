@@ -1,5 +1,5 @@
 import gc
-
+import ast
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -64,32 +64,33 @@ if __name__ == '__main__':
         gc.collect()
 
     results_df = pd.DataFrame(scores, columns=['model', 'params', 'loss'])
-    print(results_df)
     results_df.to_csv('results.csv', index=False)
 
-    fig, ax = plt.subplots()
     sorted_results = results_df.sort_values(by='loss', ascending=True)
+    models = (sorted_results['model'] + ' ' + sorted_results['params']).astype(str)
+    losses = sorted_results['loss']
+    indices = list(range(len(losses)))
 
-    for i, row in sorted_results.iterrows():
-        ax.scatter(i, row['mse'], label=f"{row['model']} {row['params']}")
+    plt.figure(figsize=(10, 6))
+    plt.barh(models, indices, color='skyblue')
+    plt.xlabel('Loss')
+    plt.ylabel('Models and Parameters')
+    plt.title('Model assessment results')
 
-    ax.set_xlabel('Index')
-    ax.set_ylabel('Mean Squared Error')
-    ax.set_title('Hyperparameter Tuning Results')
-    plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
     plt.tight_layout()
     plt.show()
 
     best_model_info = results_df.sort_values(by='loss').iloc[0]
     best_model_name = best_model_info['model']
-    best_params = best_model_info['params']
+    best_params = ast.literal_eval(best_model_info['params'])
 
     best_model = models_hyperparams[best_model_name]['model'](**best_params)
     best_model.fit(X_train, y_train)
     best_pred = best_model.predict(X_test)
+    best_pred = np.stack((best_pred[:, 1], best_pred[:, 0]), axis=-1)
 
     write_submission(
-        trip_ids=len(X_test),
+        trip_ids=test_data.index.values,
         destinations=best_pred,
-        file_name="best_model_submission.csv"
+        file_name="best_model_submission"
     )
